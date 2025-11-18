@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wavfile
 
-sample_rate, audio_data = wavfile.read('./signals/BPSK/BPSK_IQ_Fs48KHz.wav')
+plt.style.use('dark_background')
+
+sample_rate, audio_data = wavfile.read('./BPSK_IQ_Fs48KHz.wav')
 
 print(f"Sample Rate: {sample_rate}")
 
@@ -73,14 +76,11 @@ plt.ylim(-limits, limits)
 
 plt.scatter(np.real(phaseAdjSig), np.imag(phaseAdjSig), s = 10, alpha=0.7, label="Phase Adjusted")
 plt.legend()
-# plt.show()
 
 spb = 40
 intDecision = []
 for n in range(int(phaseAdjSig.size/spb)):
     intDecision.append(np.sum(np.real(phaseAdjSig)[n*spb:(n+1)*spb]))
-    # bits.append(int(np.real(freqAdjSig) > 0 ))
-# for n in range(bits):
 bits = (np.real(intDecision) > 0).astype(int)
 
 ans = []
@@ -91,3 +91,4 @@ for n in range(int(len(bits)/8)):
     ans.append(chr(byte_value))
 
 print(f"ans: {ans}")
+plt.show()
