@@ -1,0 +1,6 @@
+[submodule "BPSK/BPSK-Decode"]
+	path = BPSK/BPSK-Decode
+	url = git@github.com:DrSDR/BPSK-Decode.git
+[submodule "QPSK/QPSK-Decode"]
+	path = QPSK/QPSK-Decode
+	url = git@github.com:DrSDR/QPSK-Decode.git
