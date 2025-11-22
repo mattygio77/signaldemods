@@ -21,7 +21,15 @@ q_samples = audio_data[:, 1]
 
 complex_signal = i_samples + 1j * q_samples
 
-freqOffset = -2500 +71
+sigFft = np.fft.fft(complex_signal)
+sigFftAbs = np.abs(sigFft)
+peakIdx = np.argmax(sigFftAbs)
+
+freqs = np.fft.fftfreq(len(complex_signal), d=1/sample_rate)
+
+print(f"freq with peak: {freqs[peakIdx]}")
+
+freqOffset = freqs[peakIdx]
 phaseOffset = 0
 duration = len(i_samples)/sample_rate
 
@@ -33,6 +41,6 @@ sigAdj = complex_signal * complexConjugate
 #Plotting
 plottingLib.plotTime(complex_signal, sigAdj)
 plottingLib.plotFreq(complex_signal, sample_rate, sigAdj)
-plottingLib.plotConstallation(complex_signal, sigAdj)
+plottingLib.plotConstallation(sigAdj)
 
 plt.show()
