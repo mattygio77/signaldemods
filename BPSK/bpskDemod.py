@@ -24,8 +24,16 @@ complex_signal = i_samples + 1j * q_samples
 fft_result = np.fft.fft(complex_signal)
 frequencies = np.fft.fftfreq(len(complex_signal), d=1/sample_rate)
 
+# Square law calc for coarse freq correction
+square = complex_signal*complex_signal
+squareFFT = np.fft.fft(square)
+squareFreq = np.fft.fftfreq(len(square), d=1/sample_rate)
+squareAbs = np.abs(squareFFT)
+peakIdx = np.argmax(squareAbs)
+print(f"Coarse Freq Correction: {squareFreq[peakIdx]/2}")
+
 # Freq Adjust
-freqOffset = 4320
+freqOffset = squareFreq[peakIdx]/2
 duration = len(i_samples)/sample_rate
 t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 complexConjugate = np.exp(-1j * (2 * np.pi * freqOffset * t))
