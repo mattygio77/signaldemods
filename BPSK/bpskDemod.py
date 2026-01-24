@@ -12,6 +12,34 @@ import plottingLib
 
 plt.style.use('dark_background')
 
+def costaLoop(signal, Kp=0.01, Ki=0.0001, numPasses=5):
+
+    # normalize the signal to +-1
+    signal /= np.sqrt(np.mean(np.abs(signal)**2)) + 1e-12
+
+    N = len(signal)
+    phase = 0.0
+    integrator = 0.0
+    sig_rot = np.zeros_like(signal, dtype=np.complex64)
+    phase_hist = np.zeros(N)
+    for pass_idx in range(numPasses):
+        for n in range(N):
+            v = signal[n] * np.exp(-1j * phase)
+            I = v.real
+            Q = v.imag
+
+            s = 1.0 if I >= 0 else -1.0
+            error = s * Q
+
+            integrator += Ki * error
+            phase += Kp * error + integrator
+
+            if phase > np.pi or phase < -np.pi:
+                phase = (phase + np.pi) % (2*np.pi) - np.pi
+            sig_rot[n] = v
+            phase_hist[n] = phase
+    return sig_rot, phase_hist
+
 sample_rate, audio_data = wavfile.read('./BPSK-Decode/BPSK_IQ_Fs48KHz.wav')
 
 print(f"Sample Rate: {sample_rate}")
@@ -39,16 +67,14 @@ t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
 complexConjugate = np.exp(-1j * (2 * np.pi * freqOffset * t))
 freqAdjSig = complexConjugate * complex_signal
 
-# Phase Adjust
-phaseOffset = np.pi * -.2
-complexConjugatePhase = np.exp(-1j * (2 * np.pi * freqOffset * t + phaseOffset))
-phaseAdjSig = complexConjugatePhase * complex_signal
+numPass = 1
+phaseAdjSig, phaseHist = costaLoop(freqAdjSig, numPasses=numPass)
+print(f"Settled Phase Correction: {np.mean(phaseHist[len(phaseHist)-5:])}")
 
-fft_result = np.fft.fft(freqAdjSig)
-frequencies = np.fft.fftfreq(len(freqAdjSig), d=1/sample_rate)
-
-freqAdjSigI = np.real(freqAdjSig)
-freqAdjSigQ = np.imag(freqAdjSig)
+# Phase Adjust Manual
+# phaseOffset = np.pi * -.3
+# complexConjugatePhase = np.exp(-1j * (2 * np.pi * freqOffset * t + phaseOffset))
+# phaseAdjSig = complexConjugatePhase * complex_signal
 
 # Decoding Frame
 spb = 40
@@ -68,7 +94,8 @@ print(f"ans: {ans}")
 
 #Plotting
 plottingLib.plotTime(complex_signal, phaseAdjSig)
-plottingLib.plotFreq(complex_signal, sample_rate, phaseAdjSig)
+plottingLib.plotFreq(complex_signal, sample_rate)
+plottingLib.plotFreq(phaseAdjSig, sample_rate)
 plottingLib.plotConstallation(freqAdjSig, phaseAdjSig)
 
 plt.show()

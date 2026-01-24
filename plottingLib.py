@@ -4,8 +4,12 @@ import numpy as np
 
 
 def plotConstallation(sig1, sig2=None):
+    limits = 0
+    if sig2 is None:
+        limits = np.max(np.abs(sig1)) * 1.1
+    else:
+        limits = np.max([np.max(np.abs(sig1)), np.max(np.abs(sig2))]) * 1.1
 
-    limits = 30e3
     plt.figure(figsize=(5,5))
     plt.scatter(np.real(sig1), np.imag(sig1), s=10, alpha=0.7, label="Original Signal")
     plt.title("IQ Constellation Diagram")
