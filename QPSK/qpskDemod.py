@@ -29,7 +29,7 @@ def qpskCostaLoop(sig, loopBw= 0.01, damping = 1/np.sqrt(2)):
     sigRot = np.zeros_like(sig, dtype=np.complex64)
     phaseHist = np.zeros(N)
     errorHist = np.zeros(N)
-    numPasses = 2
+    numPasses = 1
 
     for passIdx in range(numPasses):
         for n in range(N):

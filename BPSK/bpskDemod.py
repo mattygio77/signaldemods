@@ -40,7 +40,7 @@ def costaLoop(signal, Kp=0.01, Ki=0.0001, numPasses=5):
             phase_hist[n] = phase
     return sig_rot, phase_hist
 
-sample_rate, audio_data = wavfile.read('./BPSK-Decode/BPSK_IQ_Fs48KHz.wav')
+sample_rate, audio_data = wavfile.read('./signaldemods/BPSK/BPSK-Decode/BPSK_IQ_Fs48KHz.wav')
 
 print(f"Sample Rate: {sample_rate}")
 
