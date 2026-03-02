@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wavfile
+import time
 
 #Local imports
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,33 +26,66 @@ complex_signal = i_samples + 1j * q_samples
 fft_result = np.fft.fft(complex_signal)
 frequencies = np.fft.fftfreq(len(complex_signal), d=1/sample_rate)
 
-# plottingLib.plotTime(complex_signal)
-# plottingLib.plotFreq(complex_signal, sample_rate)
+preamble_template = np.array([
+    1, 1,        # pulse at 0 μs (samples 0-1)
+    -1,          # gap
+    1, 1,        # pulse at 1.0 μs (samples 3-4)
+    -1, -1, -1,  # gap
+    1, 1,        # pulse at 3.5 μs (samples 8-9)
+    -1,          # gap
+    1, 1,        # pulse at 4.5 μs (samples 11-12)
+    -1, -1, -1, -1, -1, -1  # trailing gap
+])
 
 # Batch Processing since its a big file
 batchSize = 1024 * 100
 avgSize = 1000
 multiplier = 5.0
-for idx in range(0, len(audio_data), batchSize):
+
+# Checking Processing Time
+start = time.time()
+totSamps = int(len(audio_data)/20)
+
+for idx in range(0, totSamps, batchSize):
     i_samples = audio_data[idx:idx+batchSize, 0]
     q_samples = audio_data[idx:idx+batchSize, 1]
     samps = i_samples + 1j * q_samples
 
-    magnitudes = np.sqrt(samps[:avgSize].real**2+samps[:avgSize].imag**2)
+    magnitudes = np.sqrt(samps.real**2+samps.imag**2)
 
-    # Not really that usuefully unless Mags is longer
-    # movingAvg = np.convolve(magnitudes, np.ones(avgSize)/avgSize, mode="same")
-    # print(f"Length of moving Avg: {len(movingAvg)}")
-    # threshold = np.mean(movingAvg) * multiplier
+    movingAvg = np.convolve(magnitudes, np.ones(avgSize)/avgSize, mode="same")
+    threshold = movingAvg * multiplier
 
-    # Going to try random sample indexing
-    sample_indices = np.random.choice(len(magnitudes), size=1000, replace=False)
-    threshold = np.mean(magnitudes[sample_indices]) * multiplier
-    print(f"Threshold: {threshold}")
+    # detections = magnitudes > threshold
+    # print(f"Detections: {detections}")
+    
+    magsNorm = magnitudes / threshold
+    correlation = np.correlate(magsNorm, preamble_template, mode="valid")
 
-    detections = magnitudes > threshold
-    print(f"Detections: {detections}")
+    correlationThreshold = np.percentile(correlation, 99)
+    peaks = np.where(correlation > correlationThreshold)[0]
 
+    min_separation = 134
+    preambles = []
+    for peak in peaks:
+        if not preambles or (peak - preambles[-1]) > min_separation:
+            preambles.append(peak)
+
+
+    # Going to try random sample indexing. Might need if we slow down.
+    # magnitudes = np.sqrt(samps[:avgSize].real**2+samps[:avgSize].imag**2)
+    # sample_indices = np.random.choice(len(magnitudes), size=1000, replace=False)
+    # threshold = np.mean(magnitudes[sample_indices]) * multiplier
+    # print(f"Threshold: {threshold}")
+
+# Real Time Check
+elapsed = time.time() - start
+print(f"Elapsed Time: {elapsed}")
+print(f"Duration of Data: {totSamps / sample_rate}")
+if totSamps / sample_rate > elapsed:
+    print("[Pass] We are in real time")
+else: 
+    print("[Fail] We are slower than real time")
 
 plottingLib.plotTime(samps)
 plottingLib.plotFreq(samps, sample_rate)
